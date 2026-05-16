@@ -42,6 +42,13 @@ download and management, and localization.
 
 - English and Simplified Chinese (`Localizable.xcstrings`).
 
+## Dependencies
+
+- **[ds4](https://github.com/antirez/ds4)** — the core inference engine. DS4Mac
+  bundles `ds4-server` as a sidecar process, builds Metal GPU and baseline CPU
+  variants, and passes user-configured flags directly to the server. Pinned via
+  a git submodule at `Vendor/ds4/`.
+
 ## Project Layout
 
 - `DS4Mac/`: SwiftUI app source.
