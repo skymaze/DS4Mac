@@ -4,77 +4,15 @@
     "" : {
 
     },
-    "--backend" : {
-
-    },
-    "--cors" : {
-
-    },
-    "--ctx" : {
-
-    },
-    "--disable-exact-dsml-tool-replay" : {
-
-    },
-    "--host" : {
-
-    },
-    "--kv-cache-boundary-align-tokens" : {
-
-    },
-    "--kv-cache-boundary-trim-tokens" : {
-
-    },
-    "--kv-cache-cold-max-tokens" : {
-
-    },
-    "--kv-cache-continued-interval-tokens" : {
-
-    },
-    "--kv-cache-min-tokens" : {
-
-    },
-    "--kv-cache-reject-different-quant" : {
-
-    },
-    "--kv-disk-dir" : {
-
-    },
-    "--kv-disk-space-mb" : {
-
-    },
-    "--model" : {
-
-    },
-    "--mtp" : {
-
-    },
-    "--mtp-draft" : {
-
-    },
-    "--mtp-margin" : {
-
-    },
-    "--port" : {
-
-    },
-    "--quality" : {
-
-    },
-    "--threads" : {
-
-    },
-    "--tokens" : {
-
-    },
-    "--tool-memory-max-ids" : {
-
-    },
-    "--trace" : {
-
-    },
-    "--warm-weights" : {
-
+    "%@ / %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ / %2$@"
+          }
+        }
+      }
     },
     "%@ used of %@" : {
       "extractionState" : "manual",
@@ -289,6 +227,23 @@
         }
       }
     },
+    "Change..." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改..."
+          }
+        }
+      }
+    },
     "Choose a model file before starting the service." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -448,23 +403,6 @@
     "cuda" : {
 
     },
-    "Custom Path" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Custom Path"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自定义路径"
-          }
-        }
-      }
-    },
     "Custom..." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -478,6 +416,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "自定义..."
+          }
+        }
+      }
+    },
+    "DeepSeek V4 Flash (MTP draft model)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek V4 Flash (MTP draft model)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek V4 Flash (MTP 推测解码)"
+          }
+        }
+      }
+    },
+    "DeepSeek V4 Flash (q2-imatrix)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek V4 Flash (q2-imatrix)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek V4 Flash (q2-imatrix)"
+          }
+        }
+      }
+    },
+    "DeepSeek V4 Flash (q4-imatrix)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek V4 Flash (q4-imatrix)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek V4 Flash (q4-imatrix)"
           }
         }
       }
@@ -515,6 +504,9 @@
           }
         }
       }
+    },
+    "Delete" : {
+
     },
     "Destination file used when trace logging is enabled." : {
       "extractionState" : "manual",
@@ -567,8 +559,76 @@
         }
       }
     },
-    "DS4" : {
+    "Download" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载"
+          }
+        }
+      }
+    },
+    "Download a model or place .gguf files in the folder." : {
 
+    },
+    "Download a model or place .gguf files in the models folder." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download a model or place .gguf files in the models folder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载模型或将 .gguf 文件放入模型目录。"
+          }
+        }
+      }
+    },
+    "Download Folder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Folder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载目录"
+          }
+        }
+      }
+    },
+    "DS4" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DS4"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DS4"
+          }
+        }
+      }
     },
     "ds4-server.log" : {
 
@@ -637,6 +697,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "HTTP API"
+          }
+        }
+      }
+    },
+    "In Use" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Use"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用中"
           }
         }
       }
@@ -726,6 +803,57 @@
         }
       }
     },
+    "Local" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地"
+          }
+        }
+      }
+    },
+    "Local folder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local folder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地目录"
+          }
+        }
+      }
+    },
+    "Local Models" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local Models"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地模型"
+          }
+        }
+      }
+    },
     "Logs" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -739,6 +867,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "日志"
+          }
+        }
+      }
+    },
+    "Main" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Main"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主模型"
           }
         }
       }
@@ -759,6 +904,9 @@
           }
         }
       }
+    },
+    "Main Models" : {
+
     },
     "Maximum context window, in tokens. Larger values use more memory." : {
       "extractionState" : "manual",
@@ -899,6 +1047,60 @@
         }
       }
     },
+    "Model Catalog" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model Catalog"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型目录"
+          }
+        }
+      }
+    },
+    "Models" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Models"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型"
+          }
+        }
+      }
+    },
+    "MTP" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MTP"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MTP"
+          }
+        }
+      }
+    },
+    "MTP Models" : {
+
+    },
     "Needs attention" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -950,6 +1152,23 @@
         }
       }
     },
+    "No local models" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No local models"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无本地模型"
+          }
+        }
+      }
+    },
     "No logs yet." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -967,39 +1186,42 @@
         }
       }
     },
-    "No model selected" : {
+    "No models found" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No model selected"
+            "value" : "No models found"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未选择模型"
+            "value" : "未找到模型"
           }
         }
       }
     },
-    "Not set" : {
+    "Not selected" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Not set"
+            "value" : "Not selected"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未设置"
+            "value" : "未选择"
           }
         }
       }
+    },
+    "Not used" : {
+
     },
     "Number of draft tokens to propose when the MTP model is enabled." : {
       "extractionState" : "manual",
@@ -1103,6 +1325,40 @@
         }
       }
     },
+    "Recommended" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommended"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "推荐"
+          }
+        }
+      }
+    },
+    "Recommended Models" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommended Models"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "推荐模型"
+          }
+        }
+      }
+    },
     "Refresh" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1150,6 +1406,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重启"
+          }
+        }
+      }
+    },
+    "Retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重试"
           }
         }
       }
@@ -1698,6 +1971,40 @@
         }
       }
     },
+    "Use as Model" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use as Model"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用作主模型"
+          }
+        }
+      }
+    },
+    "Use as MTP" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use as MTP"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用作 MTP"
+          }
+        }
+      }
+    },
     "Uses the bundled ds4-server built for all Apple Silicon Macs." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1732,23 +2039,6 @@
         }
       }
     },
-    "Uses the bundled ds4-server unless a custom executable is selected." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uses the bundled ds4-server unless a custom executable is selected."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "默认使用内置 ds4-server，也可以选择自定义可执行文件。"
-          }
-        }
-      }
-    },
     "Write a ds4 trace file for debugging rendered prompts and cache behavior." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1767,5 +2057,5 @@
       }
     }
   },
-  "version" : "1.0"
+  "version" : "1.1"
 }

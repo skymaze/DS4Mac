@@ -15,6 +15,7 @@ final class AppModel: ObservableObject {
 
     let logStore: LogStore
     let processManager: ServerProcessManager
+    let modelDownloadManager: ModelDownloadManager
 
     private var cancellables: Set<AnyCancellable> = []
     private var kvCacheTask: Task<Void, Never>?
@@ -24,11 +25,19 @@ final class AppModel: ObservableObject {
         self.config = AppPreferences.loadConfig()
         self.logStore = logs
         self.processManager = ServerProcessManager(logStore: logs)
+        self.modelDownloadManager = ModelDownloadManager()
 
         processManager.$status
             .receive(on: RunLoop.main)
             .sink { [weak self] status in
                 self?.status = status
+            }
+            .store(in: &cancellables)
+
+        modelDownloadManager.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
             }
             .store(in: &cancellables)
 
@@ -150,6 +159,12 @@ final class AppModel: ObservableObject {
     func quit() {
         processManager.stopForAppTermination()
         NSApplication.shared.terminate(nil)
+    }
+
+    func revealModelsFolder() {
+        NSWorkspace.shared.activateFileViewerSelecting(
+            [modelDownloadManager.modelDirectory]
+        )
     }
 
     private static let byteFormatter: ByteCountFormatter = {

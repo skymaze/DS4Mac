@@ -5,25 +5,36 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @EnvironmentObject private var appModel: AppModel
     @State private var showingClearKVCacheConfirmation = false
+    @State private var selectedTab = "service"
+    @State private var modelSubTab = "recommended"
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             serviceTab
                 .tabItem {
                     Label("Service", systemImage: "server.rack")
                 }
+                .tag("service")
             runtimeTab
                 .tabItem {
                     Label("Runtime", systemImage: "speedometer")
                 }
+                .tag("runtime")
             storageTab
                 .tabItem {
                     Label("KV Cache", systemImage: "externaldrive")
                 }
+                .tag("storage")
+            modelsTab
+                .tabItem {
+                    Label("Models", systemImage: "arrow.down.doc")
+                }
+                .tag("models")
             logsTab
                 .tabItem {
                     Label("Logs", systemImage: "doc.text")
                 }
+                .tag("logs")
         }
         .frame(width: 760, height: 640)
         .padding(20)
@@ -61,29 +72,19 @@ struct SettingsView: View {
             }
 
             SettingsSection("Model") {
-                SettingRow(
-                    "--model",
-                    description: String(localized: "Main GGUF model loaded by ds4-server before accepting API requests.")
-                ) {
-                    pathControl(
-                        displayText: pathSummary(appModel.config.modelPath) ?? String(localized: "No model selected"),
-                        fullPath: appModel.config.modelPath
-                    ) {
-                        chooseModel()
-                    }
-                }
+                modelPickerRow(
+                    flag: "--model",
+                    description: String(localized: "Main GGUF model loaded by ds4-server before accepting API requests."),
+                    currentPath: $appModel.config.modelPath,
+                    isMTP: false
+                )
 
-                SettingRow(
-                    "--mtp",
-                    description: String(localized: "Optional GGUF draft model for speculative decoding.")
-                ) {
-                    pathControl(
-                        displayText: pathSummary(appModel.config.mtpPath) ?? String(localized: "Not set"),
-                        fullPath: appModel.config.mtpPath
-                    ) {
-                        chooseMTPModel()
-                    }
-                }
+                modelPickerRow(
+                    flag: "--mtp",
+                    description: String(localized: "Optional GGUF draft model for speculative decoding."),
+                    currentPath: $appModel.config.mtpPath,
+                    isMTP: true
+                )
 
                 SettingRow(
                     "--mtp-draft",
@@ -339,6 +340,231 @@ struct SettingsView: View {
         }
     }
 
+    private var modelsTab: some View {
+        SettingsPage {
+            SettingsSection("Model Catalog") {
+                Picker("", selection: $modelSubTab) {
+                    Text(String(localized: "Recommended")).tag("recommended")
+                    Text(String(localized: "Local")).tag("local")
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+
+            if modelSubTab == "recommended" {
+                SettingsSection("Main Models") {
+                    ForEach(ModelCatalog.recommended.filter { !$0.isMTP }) { model in
+                        recommendedRow(for: model)
+                    }
+                }
+                SettingsSection("MTP Models") {
+                    ForEach(ModelCatalog.recommended.filter { $0.isMTP }) { model in
+                        recommendedRow(for: model)
+                    }
+                }
+            } else {
+                localModelList(forType: nil)
+            }
+        }
+    }
+
+    private func modelPickerRow(
+        flag: String,
+        description: String,
+        currentPath: Binding<String?>,
+        isMTP: Bool
+    ) -> some View {
+        let displayPath = currentPath.wrappedValue ?? ""
+        let baseDir = (isMTP ? AppDirectories.mtpModels : AppDirectories.mainModels).path + "/"
+        let relativePath = displayPath.hasPrefix(baseDir)
+            ? String(displayPath.dropFirst(baseDir.count))
+            : displayPath
+        let displayText = currentPath.wrappedValue != nil
+            ? relativePath
+            : (isMTP ? String(localized: "Not used") : String(localized: "Not selected"))
+
+        return SettingRow(flag, description: description) {
+            HStack(spacing: 8) {
+                Text(displayText)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Button(String(localized: "Change...")) {
+                    selectedTab = "models"
+                }
+                .controlSize(.small)
+                if isMTP && currentPath.wrappedValue != nil {
+                    Button(String(localized: "Clear")) {
+                        currentPath.wrappedValue = nil
+                    }
+                    .controlSize(.small)
+                }
+            }
+        }
+    }
+
+    private func recommendedRow(for model: ModelInfo) -> some View {
+        let destURL = appModel.modelDownloadManager.destinationURL(for: model)
+        let isDownloaded = FileManager.default.fileExists(atPath: destURL.path)
+        let isInUse = model.isMTP
+            ? appModel.config.mtpPath == destURL.path
+            : appModel.config.modelPath == destURL.path
+
+        return SettingRow(
+            model.name,
+            description: Self.byteFormatter.string(fromByteCount: model.expectedBytes)
+        ) {
+            if isDownloaded {
+                if isInUse {
+                    Text(String(localized: "In Use"))
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button(model.isMTP
+                        ? String(localized: "Use as MTP")
+                        : String(localized: "Use as Model")
+                    ) {
+                        if model.isMTP {
+                            appModel.config.mtpPath = destURL.path
+                        } else {
+                            appModel.config.modelPath = destURL.path
+                        }
+                    }
+                    Button(role: .destructive) {
+                        try? FileManager.default.removeItem(at: destURL)
+                    } label: {
+                        Label(String(localized: "Delete"), systemImage: "trash")
+                    }
+                }
+            } else {
+                catalogDownloadButton(for: model)
+            }
+        }
+    }
+
+    @ViewBuilder private func localModelList(forType type: ModelType?) -> some View {
+        let dirs: [(URL, String)] = {
+            if let type {
+                return [(type == .main ? AppDirectories.mainModels : AppDirectories.mtpModels, "")]
+            }
+            return [
+                (AppDirectories.mainModels, String(localized: "Main")),
+                (AppDirectories.mtpModels, String(localized: "MTP"))
+            ]
+        }()
+
+        ForEach(dirs, id: \.0.path) { dir, label in
+            let files = localModelFiles(in: dir)
+            if !label.isEmpty {
+                SettingRow(label, description: String(localized: "Local folder")) {
+                    Button(String(localized: "Show Folder")) {
+                        NSWorkspace.shared.activateFileViewerSelecting([dir])
+                    }
+                    .controlSize(.small)
+                }
+            }
+            if files.isEmpty && label.isEmpty {
+                SettingRow(
+                    String(localized: "No models found"),
+                    description: String(localized: "Download a model or place .gguf files in the folder.")
+                ) {
+                    Button(String(localized: "Show Folder")) {
+                        NSWorkspace.shared.activateFileViewerSelecting([dir])
+                    }
+                    .controlSize(.small)
+                }
+            }
+            ForEach(files, id: \.path) { url in
+                let base = dir.path + "/"
+                let relativePath = url.path.hasPrefix(base)
+                    ? String(url.path.dropFirst(base.count))
+                    : url.path
+                let isInUse = appModel.config.modelPath == url.path || appModel.config.mtpPath == url.path
+                let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
+
+                SettingRow(
+                    relativePath,
+                    description: Self.byteFormatter.string(fromByteCount: fileSize)
+                ) {
+                    HStack(spacing: 6) {
+                        if isInUse {
+                            Text(String(localized: "In Use"))
+                                .foregroundStyle(.secondary)
+                        } else {
+                            if dir == AppDirectories.mainModels {
+                                Button(String(localized: "Use as Model")) {
+                                    appModel.config.modelPath = url.path
+                                }
+                            } else {
+                                Button(String(localized: "Use as MTP")) {
+                                    appModel.config.mtpPath = url.path
+                                }
+                            }
+                            Button(role: .destructive) {
+                                try? FileManager.default.removeItem(at: url)
+                            } label: {
+                                Label(String(localized: "Delete"), systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func localModelFiles(in dir: URL) -> [URL] {
+        guard let enumerator = FileManager.default.enumerator(
+            at: dir,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else { return [] }
+        var result: [URL] = []
+        for case let url as URL in enumerator {
+            guard url.pathExtension == "gguf" else { continue }
+            result.append(url)
+        }
+        return result.sorted { $0.path < $1.path }
+    }
+
+    @ViewBuilder private func catalogDownloadButton(for model: ModelInfo) -> some View {
+        let status = appModel.modelDownloadManager.status(for: model)
+        switch status {
+        case .downloading(let progress, let downloadedBytes, let expectedBytes):
+            VStack(alignment: .leading, spacing: 4) {
+                ProgressView(value: progress).frame(maxWidth: 200)
+                HStack {
+                    Text("\(Self.byteFormatter.string(fromByteCount: downloadedBytes)) / \(Self.byteFormatter.string(fromByteCount: expectedBytes))")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button(role: .destructive) {
+                        appModel.modelDownloadManager.cancelDownload(modelKey: model.key)
+                    } label: {
+                        Label(String(localized: "Cancel"), systemImage: "xmark")
+                    }
+                }
+            }
+        case .failed(let message):
+            HStack {
+                Text(message).font(.caption).foregroundColor(.red)
+                Button(String(localized: "Retry")) {
+                    appModel.modelDownloadManager.cancelDownload(modelKey: model.key)
+                    appModel.modelDownloadManager.startDownload(for: model)
+                }.controlSize(.small)
+            }
+        case .notDownloaded, .completed:
+            Button(String(localized: "Download")) {
+                appModel.modelDownloadManager.startDownload(for: model)
+            }
+        }
+    }
+
+    private static let byteFormatter: ByteCountFormatter = {
+        let f = ByteCountFormatter()
+        f.allowedUnits = [.useGB, .useMB, .useKB]
+        f.countStyle = .file
+        return f
+    }()
+
+
     private var logsTab: some View {
         LogsPane(logStore: appModel.logStore) {
             appModel.revealLogsFolder()
@@ -406,16 +632,6 @@ struct SettingsView: View {
     private func chooseServiceEngine() {
         guard let url = openFile(allowedExtensions: nil) else { return }
         appModel.config.customServerPath = url.path
-    }
-
-    private func chooseModel() {
-        guard let url = openFile(allowedExtensions: ["gguf"]) else { return }
-        appModel.config.modelPath = url.path
-    }
-
-    private func chooseMTPModel() {
-        guard let url = openFile(allowedExtensions: ["gguf"]) else { return }
-        appModel.config.mtpPath = url.path
     }
 
     private func chooseKVCacheFolder() {
@@ -553,6 +769,16 @@ private struct SettingRow<Control: View>: View {
         @ViewBuilder control: () -> Control
     ) {
         self.title = title
+        self.description = description
+        self.control = control()
+    }
+
+    init(
+        _ title: String,
+        description: String,
+        @ViewBuilder control: () -> Control
+    ) {
+        self.title = LocalizedStringKey(title)
         self.description = description
         self.control = control()
     }

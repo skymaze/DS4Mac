@@ -5,117 +5,79 @@ It provides a graphical workflow for selecting a GGUF model, configuring the
 runtime, starting or stopping the service, and viewing service logs without
 manually using Terminal flags.
 
-The project is currently in early v0.1 development. The base SwiftUI interface
-and local service launcher are running, including sidecar embedding, parameter
-configuration, readiness checks, log capture, and app-fronting behavior for the
-menu bar and Settings windows.
+The project is in early development. The SwiftUI interface and local service
+launcher are functional: sidecar embedding, parameter configuration, readiness
+checks, log capture, app-fronting for the menu bar and Settings windows, model
+download and management, and localization.
 
 ## What It Does
 
 - Runs as a macOS menu bar app.
 - Starts, stops, and restarts a bundled `ds4-server` process.
-- Lets users choose a local GGUF model file from Settings.
-- Exposes configurable ds4 runtime options such as `--ctx`, `--tokens`,
-  `--backend`, `--threads`, `--kv-disk-dir`, and `--kv-disk-space-mb`.
+- **Models tab** — download recommended models from the catalog, view local
+  `.gguf` files in `Models/main/` and `Models/mtp/` directories.
+- **Service tab** — displays the selected model path with a shortcut to the
+  Models tab for switching.
+- Exposes configurable ds4 runtime options including `--ctx`, `--tokens`,
+  `--backend`, `--threads`, `--host`, `--port`, `--cors`, and the full set of
+  KV cache and speculative decoding flags.
 - Captures stdout and stderr from the service into an in-app log view.
 - Copies the local OpenAI-compatible API base address for agent clients.
+
+### Engine Selection
+
+- Builds two `ds4-server` variants at build time:
+  - **Baseline** (`-mcpu=apple-m1`) — compatible with all Apple Silicon Macs.
+  - **Optimized** (`-mcpu=native`) — leverages M4+ features like SME.
+- Detects hardware at runtime and selects the best engine automatically.
+- Users can override: Automatic, Metal baseline, Metal M4+ optimized, or a
+  custom executable path.
+
+### KV Cache Management
+
+- Reports current on-disk KV cache size with a usage bar in Settings.
+- Provides Refresh and Clear Cache actions (service must be stopped first).
+
+### Localization
+
+- English and Simplified Chinese (`Localizable.xcstrings`).
 
 ## Project Layout
 
 - `DS4Mac/`: SwiftUI app source.
-- `DS4MacTests/`: Unit tests for configuration and command generation.
+- `DS4MacTests/`: Unit tests.
 - `DS4MacUITests/`: App launch UI tests.
 - `Vendor/ds4/`: Pinned ds4 source checkout used to build the sidecar.
 - `scripts/`: Helper scripts for building and embedding `ds4-server`.
 
 ## Build And Run
 
-Clone the project with its ds4 submodule:
-
 ```sh
+git clone --recurse-submodules https://github.com/aixn/DS4Mac.git
+# or
 git submodule update --init --recursive
 ```
 
-Open `DS4Mac.xcodeproj` in Xcode and run the `DS4Mac` scheme.
-
-The Xcode build embeds the sidecar automatically by running:
-
-```sh
-scripts/build-sidecar.sh "$TARGET_BUILD_DIR/$WRAPPER_NAME"
-```
+Open `DS4Mac.xcodeproj` in Xcode and run the `DS4Mac` scheme. The "Embed ds4
+Sidecar" build phase runs `scripts/build-sidecar.sh` automatically.
 
 For manual sidecar refreshes:
 
 ```sh
-scripts/update-ds4.sh
+scripts/update-ds4.sh [ref]
 ```
 
-After launching the app, open Settings, choose a GGUF model, then start the
-service from the menu bar.
+After launching the app, open Settings to download or select a model, then
+start the service from the menu bar.
 
-## Current Progress
+## Next Steps
 
-Implemented for the first commit:
+- First-run setup experience and empty-state guidance.
+- App icon, signed and notarized distribution, DMG packaging.
+- Diagnostics export and support bundle.
 
-- Native menu bar app shell.
-- SwiftUI Settings window with Service, Runtime, KV Cache, and Logs tabs.
-- Persistent JSON-backed settings in `UserDefaults`.
-- Automatic sidecar build and app bundle embedding from `Vendor/ds4`.
-- `ds4-server` launch command generation using ds4-style flag names.
-- Safe service startup with model/engine validation.
-- Readiness polling through `/v1/models`.
-- stdout/stderr capture into recent in-memory logs and `ds4-server.log`.
-- `DS4_LOCK_FILE` environment setup so the sidecar does not depend on
-  `/tmp/ds4.lock` from inside app launch contexts.
-- App activation helpers for status menu and Settings windows.
-- Aligned Settings UI with per-option descriptions.
-- English and Simplified Chinese localization resources.
-- KV cache usage reporting with refresh and clear-cache actions.
-- Unit coverage for command generation, legacy default migration, and log
-  clearing.
-
-Validated locally:
-
-```sh
-/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild \
-  -project DS4Mac.xcodeproj \
-  -scheme DS4Mac \
-  -configuration Debug \
-  build
-
-/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild \
-  -project DS4Mac.xcodeproj \
-  -scheme DS4Mac \
-  -configuration Debug \
-  test
-```
-
-## Roadmap
-
-### v0.1
-
-- Polish first-run setup and empty-state guidance.
-- Improve validation messages in Settings before launch.
-- Add a compact diagnostics export.
-- Prepare basic app icon and release metadata.
-
-### v0.2
-
-- First-run model installer wizard.
-- Download resume and checksum validation.
-- Recommended model selection based on available memory and disk space.
-- Better diagnostics and exportable support bundle.
-
-### v0.3
-
-- Automated ds4 update workflow.
-- Signed and notarized app distribution.
-- DMG packaging.
-- More complete status and health reporting.
-
-## Non-Goals For Now
+## Non-Goals
 
 - No built-in chat UI.
 - No multi-model router.
 - No cloud account or hosted service integration.
-- No automatic background update system yet.

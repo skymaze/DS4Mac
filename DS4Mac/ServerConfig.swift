@@ -333,6 +333,18 @@ enum AppDirectories {
         return root.appendingPathComponent("DS4Mac", isDirectory: true)
     }
 
+    static var mainModels: URL {
+        applicationSupport.appendingPathComponent("Models/main", isDirectory: true)
+    }
+
+    static var mtpModels: URL {
+        applicationSupport.appendingPathComponent("Models/mtp", isDirectory: true)
+    }
+
+    static var models: URL {
+        applicationSupport.appendingPathComponent("Models", isDirectory: true)
+    }
+
     static var logs: URL {
         let root = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
         return root.appendingPathComponent("Logs/DS4Mac", isDirectory: true)
@@ -341,6 +353,8 @@ enum AppDirectories {
     static func ensureCreated() throws {
         let fm = FileManager.default
         try fm.createDirectory(at: applicationSupport, withIntermediateDirectories: true)
+        try fm.createDirectory(at: mainModels, withIntermediateDirectories: true)
+        try fm.createDirectory(at: mtpModels, withIntermediateDirectories: true)
         try fm.createDirectory(at: logs, withIntermediateDirectories: true)
     }
 }
