@@ -43,29 +43,6 @@ enum ServerEngine: String, CaseIterable, Codable, Identifiable {
     }
 }
 
-enum HostAccess: String, CaseIterable, Codable, Identifiable {
-    case localOnly
-    case localNetwork
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .localOnly: "127.0.0.1"
-        case .localNetwork: "0.0.0.0"
-        }
-    }
-
-    var bindHost: String {
-        switch self {
-        case .localOnly: "127.0.0.1"
-        case .localNetwork: "0.0.0.0"
-        }
-    }
-
-    var loopbackHost: String { "127.0.0.1" }
-}
-
 struct ServerConfig: Codable, Equatable {
     static let defaultContextTokens = 100_000
     static let defaultOutputTokens = 393_216
@@ -83,7 +60,7 @@ struct ServerConfig: Codable, Equatable {
     var modelPath: String?
     var mtpPath: String?
     var backend: ServerBackend
-    var hostAccess: HostAccess
+    var bindHost: String
     var port: Int
     var ctxTokens: Int
     var defaultOutputTokens: Int
@@ -114,7 +91,7 @@ struct ServerConfig: Codable, Equatable {
             modelPath: nil,
             mtpPath: nil,
             backend: .automatic,
-            hostAccess: .localOnly,
+            bindHost: "127.0.0.1",
             port: 8000,
             ctxTokens: Self.defaultContextTokens,
             defaultOutputTokens: Self.defaultOutputTokens,
@@ -146,7 +123,7 @@ struct ServerConfig: Codable, Equatable {
         modelPath: String?,
         mtpPath: String?,
         backend: ServerBackend,
-        hostAccess: HostAccess,
+        bindHost: String,
         port: Int,
         ctxTokens: Int,
         defaultOutputTokens: Int,
@@ -175,7 +152,7 @@ struct ServerConfig: Codable, Equatable {
         self.modelPath = modelPath
         self.mtpPath = mtpPath
         self.backend = backend
-        self.hostAccess = hostAccess
+        self.bindHost = bindHost
         self.port = port
         self.ctxTokens = ctxTokens
         self.defaultOutputTokens = defaultOutputTokens
@@ -217,7 +194,13 @@ struct ServerConfig: Codable, Equatable {
         modelPath = try container.decodeIfPresent(String.self, forKey: .modelPath) ?? defaults.modelPath
         mtpPath = try container.decodeIfPresent(String.self, forKey: .mtpPath) ?? defaults.mtpPath
         backend = try container.decodeIfPresent(ServerBackend.self, forKey: .backend) ?? defaults.backend
-        hostAccess = try container.decodeIfPresent(HostAccess.self, forKey: .hostAccess) ?? defaults.hostAccess
+        if let host = try container.decodeIfPresent(String.self, forKey: .bindHost) {
+            bindHost = host
+        } else if let legacyAccess = try container.decodeIfPresent(String.self, forKey: .hostAccess) {
+            bindHost = legacyAccess == "localNetwork" ? "0.0.0.0" : "127.0.0.1"
+        } else {
+            bindHost = defaults.bindHost
+        }
         port = try container.decodeIfPresent(Int.self, forKey: .port) ?? defaults.port
 
         if let legacyContext = try container.decodeIfPresent(Int.self, forKey: .contextPreset) {
@@ -262,7 +245,7 @@ struct ServerConfig: Codable, Equatable {
         try container.encodeIfPresent(modelPath, forKey: .modelPath)
         try container.encodeIfPresent(mtpPath, forKey: .mtpPath)
         try container.encode(backend, forKey: .backend)
-        try container.encode(hostAccess, forKey: .hostAccess)
+        try container.encode(bindHost, forKey: .bindHost)
         try container.encode(port, forKey: .port)
         try container.encode(ctxTokens, forKey: .ctxTokens)
         try container.encode(defaultOutputTokens, forKey: .defaultOutputTokens)
@@ -288,11 +271,11 @@ struct ServerConfig: Codable, Equatable {
     }
 
     var localServiceRootURL: URL {
-        URL(string: "http://\(hostAccess.loopbackHost):\(port)")!
+        URL(string: "http://127.0.0.1:\(port)")!
     }
 
     var localAPIBaseAddress: String {
-        "http://\(hostAccess.loopbackHost):\(port)/v1"
+        "http://127.0.0.1:\(port)/v1"
     }
 
     static func normalizedContextTokens(_ value: Int) -> Int {
@@ -315,7 +298,8 @@ struct ServerConfig: Codable, Equatable {
         case modelPath
         case mtpPath
         case backend
-        case hostAccess
+        case bindHost
+        case hostAccess  // legacy
         case port
         case contextPreset
         case ctxTokens

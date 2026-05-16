@@ -108,15 +108,22 @@ struct SettingsView: View {
             SettingsSection("HTTP API") {
                 SettingRow(
                     "--host",
-                    description: String(localized: "Bind address for the local API server. Keep 127.0.0.1 for local-only access.")
+                    description: String(localized: "Bind address for the local API server. Use 127.0.0.1 for local-only access, or any IPv4 / IPv6 address.")
                 ) {
-                    Picker("", selection: $appModel.config.hostAccess) {
-                        ForEach(HostAccess.allCases) { access in
-                            Text(access.title).tag(access)
+                    HStack(spacing: 6) {
+                        TextField("127.0.0.1", text: $appModel.config.bindHost)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 160)
+                            .monospacedDigit()
+                        Button("127.0.0.1") {
+                            appModel.config.bindHost = "127.0.0.1"
                         }
+                        .controlSize(.small)
+                        Button("0.0.0.0") {
+                            appModel.config.bindHost = "0.0.0.0"
+                        }
+                        .controlSize(.small)
                     }
-                    .labelsHidden()
-                    .frame(width: 180)
                 }
 
                 SettingRow(

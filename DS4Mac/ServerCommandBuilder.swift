@@ -94,7 +94,7 @@ struct ServerCommandBuilder {
             "--model", modelURL.path,
             "--ctx", String(config.ctxTokens),
             "--tokens", String(config.defaultOutputTokens),
-            "--host", config.hostAccess.bindHost,
+            "--host", config.bindHost,
             "--port", String(config.port)
         ]
 
