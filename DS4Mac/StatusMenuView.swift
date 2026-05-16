@@ -51,14 +51,14 @@ struct StatusMenuView: View {
                 } label: {
                     Label("Start", systemImage: "play.fill")
                 }
-                .disabled(!appModel.status.canStart)
+                .disabled(!appModel.canStartService)
 
                 Button {
                     appModel.stop()
                 } label: {
                     Label("Stop", systemImage: "stop.fill")
                 }
-                .disabled(!appModel.status.canStop)
+                .disabled(!appModel.canStopService)
             }
 
             Button {
@@ -67,7 +67,7 @@ struct StatusMenuView: View {
                 Label("Restart", systemImage: "arrow.clockwise")
                     .frame(maxWidth: .infinity)
             }
-            .disabled(!appModel.status.canStop)
+            .disabled(!appModel.canStopService)
         }
     }
 

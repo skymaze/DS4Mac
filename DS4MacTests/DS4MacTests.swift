@@ -115,6 +115,24 @@ struct DS4MacTests {
         #expect(store.text.isEmpty)
         #expect((try Data(contentsOf: logURL)).isEmpty)
     }
+
+    @Test func directoryStorageMeasuresAndClearsContents() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ds4-test-cache-\(UUID().uuidString)", isDirectory: true)
+        let nested = root.appendingPathComponent("nested", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        try Data(repeating: 1, count: 4096).write(to: root.appendingPathComponent("a.bin"))
+        try Data(repeating: 2, count: 2048).write(to: nested.appendingPathComponent("b.bin"))
+
+        #expect(try DirectoryStorage.sizeOfDirectory(at: root) > 0)
+
+        try DirectoryStorage.removeContents(of: root)
+
+        #expect(try DirectoryStorage.sizeOfDirectory(at: root) == 0)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: root.path).isEmpty)
+    }
 }
 
 private extension Array where Element: Equatable {

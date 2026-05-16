@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @EnvironmentObject private var appModel: AppModel
+    @State private var showingClearKVCacheConfirmation = false
 
     var body: some View {
         TabView {
@@ -24,123 +25,292 @@ struct SettingsView: View {
                     Label("Logs", systemImage: "doc.text")
                 }
         }
-        .frame(width: 660, height: 560)
+        .frame(width: 760, height: 640)
         .padding(20)
     }
 
     private var serviceTab: some View {
-        Form {
-            Section("Service Engine") {
-                LabeledContent("Engine") {
-                    HStack {
-                        Text(engineDescription)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .foregroundStyle(.secondary)
-                        Button("Choose...") {
-                            chooseServiceEngine()
-                        }
+        SettingsPage {
+            SettingsSection("Service Engine") {
+                SettingRow(
+                    "Engine",
+                    description: "Uses the bundled ds4-server unless a custom executable is selected."
+                ) {
+                    pathControl(displayText: engineDescription, fullPath: appModel.config.customServerPath) {
+                        chooseServiceEngine()
                     }
                 }
             }
 
-            Section("Model") {
-                pathRow("--model", path: appModel.config.modelPath, emptyText: "No model selected") {
-                    chooseModel()
+            SettingsSection("Model") {
+                SettingRow(
+                    "--model",
+                    description: "Main GGUF model loaded by ds4-server before accepting API requests."
+                ) {
+                    pathControl(
+                        displayText: pathSummary(appModel.config.modelPath) ?? String(localized: "No model selected"),
+                        fullPath: appModel.config.modelPath
+                    ) {
+                        chooseModel()
+                    }
                 }
-                pathRow("--mtp", path: appModel.config.mtpPath, emptyText: "Not set") {
-                    chooseMTPModel()
+
+                SettingRow(
+                    "--mtp",
+                    description: "Optional GGUF draft model for speculative decoding."
+                ) {
+                    pathControl(
+                        displayText: pathSummary(appModel.config.mtpPath) ?? String(localized: "Not set"),
+                        fullPath: appModel.config.mtpPath
+                    ) {
+                        chooseMTPModel()
+                    }
                 }
-                LabeledContent("--mtp-draft") {
+
+                SettingRow(
+                    "--mtp-draft",
+                    description: "Number of draft tokens to propose when the MTP model is enabled."
+                ) {
                     Stepper(value: $appModel.config.mtpDraftTokens, in: 1...16, step: 1) {
                         Text("\(appModel.config.mtpDraftTokens)")
                             .monospacedDigit()
+                            .frame(width: 36, alignment: .trailing)
                     }
-                    .frame(width: 140)
+                    .frame(width: 150, alignment: .leading)
                 }
-                LabeledContent("--mtp-margin") {
+
+                SettingRow(
+                    "--mtp-margin",
+                    description: "Minimum confidence margin used when accepting speculative draft tokens."
+                ) {
                     doubleField(value: $appModel.config.mtpMargin, placeholder: "3")
                 }
             }
 
-            Section("HTTP API") {
-                Picker("--host", selection: $appModel.config.hostAccess) {
-                    ForEach(HostAccess.allCases) { access in
-                        Text(access.title).tag(access)
+            SettingsSection("HTTP API") {
+                SettingRow(
+                    "--host",
+                    description: "Bind address for the local API server. Keep 127.0.0.1 for local-only access."
+                ) {
+                    Picker("", selection: $appModel.config.hostAccess) {
+                        ForEach(HostAccess.allCases) { access in
+                            Text(access.title).tag(access)
+                        }
                     }
+                    .labelsHidden()
+                    .frame(width: 180)
                 }
-                LabeledContent("--port") {
+
+                SettingRow(
+                    "--port",
+                    description: "TCP port for the OpenAI-compatible local API."
+                ) {
                     integerField(value: $appModel.config.port, placeholder: "8000")
                 }
-                Toggle("--cors", isOn: $appModel.config.browserClientsEnabled)
+
+                SettingRow(
+                    "--cors",
+                    description: "Allow browser-based clients to call the local service."
+                ) {
+                    Toggle("", isOn: $appModel.config.browserClientsEnabled)
+                        .labelsHidden()
+                }
             }
         }
     }
 
     private var runtimeTab: some View {
-        Form {
-            Section("Model and Runtime") {
-                LabeledContent("--ctx") {
+        SettingsPage {
+            SettingsSection("Model and Runtime") {
+                SettingRow(
+                    "--ctx",
+                    description: "Maximum context window, in tokens. Larger values use more memory."
+                ) {
                     integerField(value: $appModel.config.ctxTokens, placeholder: "100000")
                 }
-                LabeledContent("--tokens") {
+
+                SettingRow(
+                    "--tokens",
+                    description: "Default generation budget when a client does not provide max tokens."
+                ) {
                     integerField(value: $appModel.config.defaultOutputTokens, placeholder: "393216")
                 }
-                LabeledContent("--threads") {
+
+                SettingRow(
+                    "--threads",
+                    description: "CPU worker thread count. Use 0 to let ds4 choose automatically."
+                ) {
                     integerField(value: $appModel.config.cpuThreads, placeholder: "0")
                 }
-                Picker("--backend", selection: $appModel.config.backend) {
-                    ForEach(ServerBackend.allCases) { backend in
-                        Text(backend.title).tag(backend)
+
+                SettingRow(
+                    "--backend",
+                    description: "Inference backend. Default lets ds4 choose the best available backend."
+                ) {
+                    Picker("", selection: $appModel.config.backend) {
+                        ForEach(ServerBackend.allCases) { backend in
+                            Text(backendTitle(backend)).tag(backend)
+                        }
                     }
+                    .labelsHidden()
+                    .frame(width: 180)
                 }
-                Toggle("--warm-weights", isOn: $appModel.config.warmWeights)
-                Toggle("--quality", isOn: $appModel.config.qualityMode)
+
+                SettingRow(
+                    "--warm-weights",
+                    description: "Touch model weights during startup to reduce first-request latency."
+                ) {
+                    Toggle("", isOn: $appModel.config.warmWeights)
+                        .labelsHidden()
+                }
+
+                SettingRow(
+                    "--quality",
+                    description: "Prefer stricter quality paths where ds4 supports them."
+                ) {
+                    Toggle("", isOn: $appModel.config.qualityMode)
+                        .labelsHidden()
+                }
             }
         }
     }
 
     private var storageTab: some View {
-        Form {
-            Section("Disk KV Cache") {
-                Toggle("--kv-disk-dir", isOn: $appModel.config.kvCacheEnabled)
-                pathRow("", path: appModel.config.kvCacheDirectory, emptyText: ServerConfig.defaultKVDiskDirectory) {
-                    chooseKVCacheFolder()
+        SettingsPage {
+            SettingsSection("Disk KV Cache") {
+                SettingRow(
+                    "--kv-disk-dir",
+                    description: "Enable disk-backed KV checkpoints and choose where cache files are stored."
+                ) {
+                    Toggle("", isOn: $appModel.config.kvCacheEnabled)
+                        .labelsHidden()
                 }
-                LabeledContent("--kv-disk-space-mb") {
+
+                SettingRow(
+                    "Cache Folder",
+                    description: "Folder used for ds4 disk KV cache files."
+                ) {
+                    pathControl(
+                        displayText: appModel.config.kvCacheDirectory,
+                        fullPath: appModel.config.kvCacheDirectory
+                    ) {
+                        chooseKVCacheFolder()
+                    }
+                }
+
+                SettingRow(
+                    "--kv-disk-space-mb",
+                    description: "Maximum disk budget for KV cache files, in megabytes."
+                ) {
                     integerField(value: $appModel.config.kvDiskSpaceMB, placeholder: "8192")
+                }
+
+                SettingRow(
+                    "Cache Usage",
+                    description: "Shows the current on-disk cache size. Stop the service before clearing it."
+                ) {
+                    kvCacheUsageControl
                 }
             }
 
-            Section("KV Cache Options") {
-                LabeledContent("--kv-cache-min-tokens") {
+            SettingsSection("KV Cache Options") {
+                SettingRow(
+                    "--kv-cache-min-tokens",
+                    description: "Smallest prefix length that ds4 will store as a reusable checkpoint."
+                ) {
                     integerField(value: $appModel.config.kvCacheMinTokens, placeholder: "512")
                 }
-                LabeledContent("--kv-cache-cold-max-tokens") {
+
+                SettingRow(
+                    "--kv-cache-cold-max-tokens",
+                    description: "Largest prompt prefix considered for the first cold checkpoint."
+                ) {
                     integerField(value: $appModel.config.kvCacheColdMaxTokens, placeholder: "30000")
                 }
-                LabeledContent("--kv-cache-continued-interval-tokens") {
+
+                SettingRow(
+                    "--kv-cache-continued-interval-tokens",
+                    description: "Interval for additional checkpoints as a long prompt continues."
+                ) {
                     integerField(value: $appModel.config.kvCacheContinuedIntervalTokens, placeholder: "10000")
                 }
-                LabeledContent("--kv-cache-boundary-trim-tokens") {
+
+                SettingRow(
+                    "--kv-cache-boundary-trim-tokens",
+                    description: "Tail tokens trimmed before aligning checkpoint boundaries."
+                ) {
                     integerField(value: $appModel.config.kvCacheBoundaryTrimTokens, placeholder: "32")
                 }
-                LabeledContent("--kv-cache-boundary-align-tokens") {
+
+                SettingRow(
+                    "--kv-cache-boundary-align-tokens",
+                    description: "Token chunk size used when aligning cache checkpoint boundaries."
+                ) {
                     integerField(value: $appModel.config.kvCacheBoundaryAlignTokens, placeholder: "2048")
                 }
-                Toggle("--kv-cache-reject-different-quant", isOn: $appModel.config.kvCacheRejectDifferentQuant)
-                Toggle("--disable-exact-dsml-tool-replay", isOn: $appModel.config.disableExactDSMLToolReplay)
-                LabeledContent("--tool-memory-max-ids") {
+
+                SettingRow(
+                    "--kv-cache-reject-different-quant",
+                    description: "Reject cache reuse when quantization metadata differs."
+                ) {
+                    Toggle("", isOn: $appModel.config.kvCacheRejectDifferentQuant)
+                        .labelsHidden()
+                }
+
+                SettingRow(
+                    "--disable-exact-dsml-tool-replay",
+                    description: "Disable exact replay of DSML tool memory during compatible cache reuse."
+                ) {
+                    Toggle("", isOn: $appModel.config.disableExactDSMLToolReplay)
+                        .labelsHidden()
+                }
+
+                SettingRow(
+                    "--tool-memory-max-ids",
+                    description: "Maximum number of tool-memory identifiers retained by ds4."
+                ) {
                     integerField(value: $appModel.config.toolMemoryMaxIds, placeholder: "100000")
                 }
             }
 
-            Section("Trace") {
-                Toggle("--trace", isOn: $appModel.config.diagnosticsEnabled)
-                pathRow("", path: appModel.config.diagnosticsFilePath, emptyText: "ds4-trace.txt") {
-                    chooseDiagnosticsFile()
+            SettingsSection("Trace") {
+                SettingRow(
+                    "--trace",
+                    description: "Write a ds4 trace file for debugging rendered prompts and cache behavior."
+                ) {
+                    Toggle("", isOn: $appModel.config.diagnosticsEnabled)
+                        .labelsHidden()
+                }
+
+                SettingRow(
+                    "Trace File",
+                    description: "Destination file used when trace logging is enabled."
+                ) {
+                    pathControl(
+                        displayText: pathSummary(appModel.config.diagnosticsFilePath) ?? "ds4-trace.txt",
+                        fullPath: appModel.config.diagnosticsFilePath
+                    ) {
+                        chooseDiagnosticsFile()
+                    }
                 }
             }
+        }
+        .onAppear {
+            appModel.refreshKVCacheUsage()
+        }
+        .onChange(of: appModel.config.kvCacheDirectory) { _, _ in
+            appModel.refreshKVCacheUsage()
+        }
+        .onChange(of: appModel.config.kvDiskSpaceMB) { _, _ in
+            appModel.refreshKVCacheUsage()
+        }
+        .alert("Clear KV Cache?", isPresented: $showingClearKVCacheConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Clear Cache", role: .destructive) {
+                appModel.clearKVCache()
+            }
+        } message: {
+            Text("This removes all files in the configured KV cache folder.")
         }
     }
 
@@ -150,14 +320,53 @@ struct SettingsView: View {
         }
     }
 
+    private var kvCacheUsageControl: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text(appModel.kvCacheUsageText)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button {
+                    appModel.refreshKVCacheUsage()
+                } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .disabled(appModel.isRefreshingKVCacheUsage)
+
+                Button(role: .destructive) {
+                    showingClearKVCacheConfirmation = true
+                } label: {
+                    Label("Clear Cache", systemImage: "trash")
+                }
+                .disabled(!appModel.canClearKVCache)
+            }
+
+            if let error = appModel.kvCacheStorageError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let fraction = appModel.kvCacheUsageFraction {
+                ProgressView(value: fraction)
+                    .frame(maxWidth: 360)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private var engineDescription: String {
         if let custom = pathSummary(appModel.config.customServerPath) {
             return custom
         }
         if ServerCommandBuilder.defaultBundledServerURL() != nil {
-            return "Bundled engine"
+            return String(localized: "Bundled engine")
         }
-        return "No bundled engine found"
+        return String(localized: "No bundled engine found")
     }
 
     private func chooseServiceEngine() {
@@ -182,9 +391,8 @@ struct SettingsView: View {
 
     private func chooseDiagnosticsFile() {
         let panel = NSSavePanel()
-        panel.title = "Choose Trace File"
+        panel.title = String(localized: "Choose Trace File")
         panel.nameFieldStringValue = "ds4-trace.txt"
-        panel.allowedContentTypes = []
         if panel.runModal() == .OK, let url = panel.url {
             appModel.config.diagnosticsFilePath = url.path
         }
@@ -214,37 +422,128 @@ struct SettingsView: View {
         return URL(fileURLWithPath: path).lastPathComponent
     }
 
-    private func pathRow(
-        _ label: String,
-        path: String?,
-        emptyText: String,
+    private func pathControl(
+        displayText: String,
+        fullPath: String?,
         choose: @escaping () -> Void
     ) -> some View {
-        LabeledContent(label) {
-            HStack {
-                Text(pathSummary(path) ?? emptyText)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .foregroundStyle(.secondary)
-                Button("Choose...") {
-                    choose()
-                }
+        HStack(spacing: 8) {
+            Text(displayText)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+                .help(fullPath?.isEmpty == false ? fullPath! : displayText)
+
+            Button("Choose...") {
+                choose()
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func integerField(value: Binding<Int>, placeholder: String) -> some View {
         TextField(placeholder, value: value, format: .number)
             .textFieldStyle(.roundedBorder)
-            .frame(width: 120)
+            .frame(width: 130)
             .monospacedDigit()
     }
 
     private func doubleField(value: Binding<Double>, placeholder: String) -> some View {
         TextField(placeholder, value: value, format: .number)
             .textFieldStyle(.roundedBorder)
-            .frame(width: 120)
+            .frame(width: 130)
             .monospacedDigit()
+    }
+
+    private func backendTitle(_ backend: ServerBackend) -> LocalizedStringKey {
+        switch backend {
+        case .automatic: "Default"
+        case .metal: "metal"
+        case .cuda: "cuda"
+        case .cpu: "cpu"
+        }
+    }
+}
+
+private struct SettingsPage<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                content
+            }
+            .padding(.vertical, 8)
+            .padding(.trailing, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+private struct SettingsSection<Content: View>: View {
+    private let title: LocalizedStringKey
+    private let content: Content
+
+    init(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+            VStack(spacing: 0) {
+                content
+            }
+            .padding(.top, 2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct SettingRow<Control: View>: View {
+    private let title: LocalizedStringKey
+    private let description: LocalizedStringKey
+    private let control: Control
+
+    init(
+        _ title: LocalizedStringKey,
+        description: LocalizedStringKey,
+        @ViewBuilder control: () -> Control
+    ) {
+        self.title = title
+        self.description = description
+        self.control = control()
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 24) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.body)
+                    .lineLimit(1)
+                    .textSelection(.enabled)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(width: 270, alignment: .leading)
+
+            control
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 8)
+        .overlay(alignment: .bottom) {
+            Divider()
+        }
     }
 }
 
@@ -275,12 +574,20 @@ private struct LogsPane: View {
             }
 
             ScrollView {
-                Text(logStore.text.isEmpty ? "No logs yet." : logStore.text)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
-                    .padding(10)
+                if logStore.text.isEmpty {
+                    Text("No logs yet.")
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                } else {
+                    Text(logStore.text)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                        .padding(10)
+                }
             }
             .background(Color(nsColor: .textBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 8))

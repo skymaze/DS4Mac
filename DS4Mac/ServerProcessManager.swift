@@ -11,11 +11,11 @@ enum ServerStatus: Equatable {
 
     var title: String {
         switch self {
-        case .stopped: "Stopped"
-        case .starting: "Starting"
-        case .running: "Running"
-        case .stopping: "Stopping"
-        case .failed: "Needs attention"
+        case .stopped: String(localized: "Stopped")
+        case .starting: String(localized: "Starting")
+        case .running: String(localized: "Running")
+        case .stopping: String(localized: "Stopping")
+        case .failed: String(localized: "Needs attention")
         }
     }
 
@@ -38,8 +38,8 @@ enum ServerStatus: Equatable {
 
     var canStop: Bool {
         switch self {
-        case .running, .starting: true
-        case .stopped, .stopping, .failed: false
+        case .running, .starting, .failed: true
+        case .stopped, .stopping: false
         }
     }
 }
@@ -65,8 +65,16 @@ final class ServerProcessManager: ObservableObject {
         self.healthChecker = healthChecker
     }
 
+    var isServiceProcessRunning: Bool {
+        process?.isRunning == true
+    }
+
     func start(config: ServerConfig) {
         guard status.canStart else { return }
+        guard !isServiceProcessRunning else {
+            status = .failed(String(localized: "Stop the current service process before starting a new one."))
+            return
+        }
         do {
             let descriptor = try commandBuilder.build(config: config)
             let launchedProcess = Process()
@@ -114,7 +122,7 @@ final class ServerProcessManager: ObservableObject {
                         self.status = .running
                         self.logStore.append("DS4 service is ready.")
                     } else if launchedProcess.isRunning {
-                        self.status = .failed("The service started but did not become ready in time.")
+                        self.status = .failed(String(localized: "The service started but did not become ready in time."))
                         self.logStore.append("Readiness check timed out for \(config.localServiceRootURL.absoluteString).")
                     }
                 }
@@ -189,7 +197,13 @@ final class ServerProcessManager: ObservableObject {
         } else {
             let code = terminatedProcess.terminationStatus
             let reason = terminationDescription(for: terminatedProcess)
-            status = code == 0 ? .stopped : .failed("The service \(reason) with code \(code). See ds4-server.log for details.")
+            status = code == 0 ? .stopped : .failed(
+                String(
+                    format: String(localized: "The service %@ with code %@. See ds4-server.log for details."),
+                    reason,
+                    String(code)
+                )
+            )
             logStore.append("DS4 service \(reason) with code \(code).")
         }
         if let config = pendingRestartConfig {

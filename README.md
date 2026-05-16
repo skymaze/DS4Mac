@@ -68,6 +68,9 @@ Implemented for the first commit:
 - `DS4_LOCK_FILE` environment setup so the sidecar does not depend on
   `/tmp/ds4.lock` from inside app launch contexts.
 - App activation helpers for status menu and Settings windows.
+- Aligned Settings UI with per-option descriptions.
+- English and Simplified Chinese localization resources.
+- KV cache usage reporting with refresh and clear-cache actions.
 - Unit coverage for command generation, legacy default migration, and log
   clearing.
 

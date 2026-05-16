@@ -34,21 +34,21 @@ enum ServerLaunchError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .missingServiceEngine:
-            "The service engine is not bundled yet. Choose a ds4 service engine in Settings."
+            String(localized: "The service engine is not bundled yet. Choose a ds4 service engine in Settings.")
         case .serviceEngineNotFound(let path):
-            "The selected service engine could not be found: \(path)"
+            String(format: String(localized: "The selected service engine could not be found: %@"), path)
         case .missingModel:
-            "Choose a model file before starting the service."
+            String(localized: "Choose a model file before starting the service.")
         case .modelNotFound(let path):
-            "The selected model file could not be found: \(path)"
+            String(format: String(localized: "The selected model file could not be found: %@"), path)
         case .fileNotFound(let flag, let path):
-            "The file configured for \(flag) could not be found: \(path)"
+            String(format: String(localized: "The file configured for %@ could not be found: %@"), flag, path)
         case .invalidPort:
-            "Choose a network port between 1024 and 65535."
+            String(localized: "Choose a network port between 1024 and 65535.")
         case .invalidValue(let flag, let value):
-            "The value for \(flag) is invalid: \(value)"
+            String(format: String(localized: "The value for %@ is invalid: %@"), flag, value)
         case .storageUnavailable(let path):
-            "The storage folder could not be prepared: \(path)"
+            String(format: String(localized: "The storage folder could not be prepared: %@"), path)
         }
     }
 }
