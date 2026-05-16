@@ -9,9 +9,24 @@ import SwiftUI
 
 @main
 struct DS4MacApp: App {
+    @StateObject private var appModel = AppModel()
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        MenuBarExtra {
+            StatusMenuView()
+                .environmentObject(appModel)
+        } label: {
+            Image(systemName: appModel.status.systemImage)
+            Text("DS4")
+        }
+        .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView()
+                .environmentObject(appModel)
+                .onAppear {
+                    AppWindowPresenter.bringVisibleWindowsForward()
+                }
         }
     }
 }
