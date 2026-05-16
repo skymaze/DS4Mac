@@ -25,6 +25,24 @@ enum ServerBackend: String, CaseIterable, Codable, Identifiable {
     }
 }
 
+enum ServerEngine: String, CaseIterable, Codable, Identifiable {
+    case automatic
+    case bundledMetal
+    case bundledMetalM4
+    case custom
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .automatic: String(localized: "Automatic")
+        case .bundledMetal: String(localized: "Metal (bundled)")
+        case .bundledMetalM4: String(localized: "Metal M4+ (bundled)")
+        case .custom: String(localized: "Custom...")
+        }
+    }
+}
+
 enum HostAccess: String, CaseIterable, Codable, Identifiable {
     case localOnly
     case localNetwork
@@ -61,6 +79,7 @@ struct ServerConfig: Codable, Equatable {
     static let defaultToolMemoryMaxIds = 100_000
 
     var customServerPath: String?
+    var serverEngine: ServerEngine
     var modelPath: String?
     var mtpPath: String?
     var backend: ServerBackend
@@ -91,6 +110,7 @@ struct ServerConfig: Codable, Equatable {
     static func defaults() -> ServerConfig {
         ServerConfig(
             customServerPath: nil,
+            serverEngine: .automatic,
             modelPath: nil,
             mtpPath: nil,
             backend: .automatic,
@@ -122,6 +142,7 @@ struct ServerConfig: Codable, Equatable {
 
     init(
         customServerPath: String?,
+        serverEngine: ServerEngine,
         modelPath: String?,
         mtpPath: String?,
         backend: ServerBackend,
@@ -150,6 +171,7 @@ struct ServerConfig: Codable, Equatable {
         diagnosticsFilePath: String
     ) {
         self.customServerPath = customServerPath
+        self.serverEngine = serverEngine
         self.modelPath = modelPath
         self.mtpPath = mtpPath
         self.backend = backend
@@ -183,6 +205,15 @@ struct ServerConfig: Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         customServerPath = try container.decodeIfPresent(String.self, forKey: .customServerPath) ?? defaults.customServerPath
+
+        if let engine = try container.decodeIfPresent(ServerEngine.self, forKey: .serverEngine) {
+            serverEngine = engine
+        } else if let path = customServerPath, !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            serverEngine = .custom
+        } else {
+            serverEngine = .automatic
+        }
+
         modelPath = try container.decodeIfPresent(String.self, forKey: .modelPath) ?? defaults.modelPath
         mtpPath = try container.decodeIfPresent(String.self, forKey: .mtpPath) ?? defaults.mtpPath
         backend = try container.decodeIfPresent(ServerBackend.self, forKey: .backend) ?? defaults.backend
@@ -227,6 +258,7 @@ struct ServerConfig: Codable, Equatable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(customServerPath, forKey: .customServerPath)
+        try container.encode(serverEngine, forKey: .serverEngine)
         try container.encodeIfPresent(modelPath, forKey: .modelPath)
         try container.encodeIfPresent(mtpPath, forKey: .mtpPath)
         try container.encode(backend, forKey: .backend)
@@ -279,6 +311,7 @@ struct ServerConfig: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case customServerPath
+        case serverEngine
         case modelPath
         case mtpPath
         case backend

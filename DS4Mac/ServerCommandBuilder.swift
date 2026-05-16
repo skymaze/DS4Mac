@@ -55,9 +55,9 @@ enum ServerLaunchError: LocalizedError, Equatable {
 
 @MainActor
 struct ServerCommandBuilder {
-    var bundledServerURL: () -> URL?
+    var bundledServerURL: (String) -> URL?
 
-    init(bundledServerURL: (() -> URL?)? = nil) {
+    init(bundledServerURL: ((String) -> URL?)? = nil) {
         self.bundledServerURL = bundledServerURL ?? Self.defaultBundledServerURL
     }
 
@@ -166,16 +166,41 @@ struct ServerCommandBuilder {
     }
 
     private func resolveExecutableURL(config: ServerConfig) throws -> URL {
-        if let path = config.customServerPath?.nilIfEmpty {
+        switch config.serverEngine {
+        case .custom:
+            guard let path = config.customServerPath?.nilIfEmpty else {
+                throw ServerLaunchError.missingServiceEngine
+            }
             guard FileManager.default.fileExists(atPath: path) else {
                 throw ServerLaunchError.serviceEngineNotFound(path)
             }
             return URL(fileURLWithPath: path)
+
+        case .automatic:
+            let name = HardwareDetector.supportsSME ? "ds4-server-m4" : "ds4-server"
+            if let url = bundledServerURL(name), FileManager.default.fileExists(atPath: url.path) {
+                return url
+            }
+            if name != "ds4-server", let url = bundledServerURL("ds4-server"), FileManager.default.fileExists(atPath: url.path) {
+                return url
+            }
+            throw ServerLaunchError.missingServiceEngine
+
+        case .bundledMetal:
+            if let url = bundledServerURL("ds4-server"), FileManager.default.fileExists(atPath: url.path) {
+                return url
+            }
+            throw ServerLaunchError.missingServiceEngine
+
+        case .bundledMetalM4:
+            if let url = bundledServerURL("ds4-server-m4"), FileManager.default.fileExists(atPath: url.path) {
+                return url
+            }
+            if let url = bundledServerURL("ds4-server"), FileManager.default.fileExists(atPath: url.path) {
+                return url
+            }
+            throw ServerLaunchError.missingServiceEngine
         }
-        if let bundled = bundledServerURL(), FileManager.default.fileExists(atPath: bundled.path) {
-            return bundled
-        }
-        throw ServerLaunchError.missingServiceEngine
     }
 
     private func resolveModelURL(config: ServerConfig) throws -> URL {
@@ -242,11 +267,11 @@ struct ServerCommandBuilder {
         ]
     }
 
-    static func defaultBundledServerURL() -> URL? {
-        if let url = Bundle.main.url(forAuxiliaryExecutable: "ds4-server") {
+    static func defaultBundledServerURL(name: String) -> URL? {
+        if let url = Bundle.main.url(forAuxiliaryExecutable: name) {
             return url
         }
-        if let url = Bundle.main.url(forResource: "ds4-server", withExtension: nil) {
+        if let url = Bundle.main.url(forResource: name, withExtension: nil) {
             return url
         }
         #if DEBUG
@@ -254,13 +279,13 @@ struct ServerCommandBuilder {
         let repoRoot = sourceFile
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-        let vendored = repoRoot.appendingPathComponent("Vendor/ds4/ds4-server")
+        let vendored = repoRoot.appendingPathComponent("Vendor/ds4/\(name)")
         if FileManager.default.fileExists(atPath: vendored.path) {
             return vendored
         }
         let sibling = repoRoot
             .deletingLastPathComponent()
-            .appendingPathComponent("ds4/ds4-server")
+            .appendingPathComponent("ds4/\(name)")
         if FileManager.default.fileExists(atPath: sibling.path) {
             return sibling
         }

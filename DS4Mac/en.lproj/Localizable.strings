@@ -84,3 +84,15 @@
 "Choose a network port between 1024 and 65535." = "Choose a network port between 1024 and 65535.";
 "The value for %@ is invalid: %@" = "The value for %@ is invalid: %@";
 "The storage folder could not be prepared: %@" = "The storage folder could not be prepared: %@";
+"Automatic" = "Automatic";
+"Metal (bundled)" = "Metal (bundled)";
+"Metal M4+ (bundled)" = "Metal M4+ (bundled)";
+"Custom..." = "Custom...";
+"Custom Path" = "Custom Path";
+"Path to a custom ds4-server executable." = "Path to a custom ds4-server executable.";
+"No executable selected" = "No executable selected";
+"Select a custom ds4-server executable." = "Select a custom ds4-server executable.";
+"Automatically selects the M4+ optimized engine for this Mac." = "Automatically selects the M4+ optimized engine for this Mac.";
+"Automatically selects the baseline Metal engine for this Mac." = "Automatically selects the baseline Metal engine for this Mac.";
+"Uses the bundled ds4-server built for all Apple Silicon Macs." = "Uses the bundled ds4-server built for all Apple Silicon Macs.";
+"Uses the bundled ds4-server optimized for M4 and later." = "Uses the bundled ds4-server optimized for M4 and later.";

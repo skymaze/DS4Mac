@@ -34,10 +34,28 @@ struct SettingsView: View {
             SettingsSection("Service Engine") {
                 SettingRow(
                     "Engine",
-                    description: "Uses the bundled ds4-server unless a custom executable is selected."
+                    description: engineDescription
                 ) {
-                    pathControl(displayText: engineDescription, fullPath: appModel.config.customServerPath) {
-                        chooseServiceEngine()
+                    Picker("", selection: $appModel.config.serverEngine) {
+                        ForEach(ServerEngine.allCases) { engine in
+                            Text(engine.title).tag(engine)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 190)
+                }
+
+                if appModel.config.serverEngine == .custom {
+                    SettingRow(
+                        "Custom Path",
+                        description: String(localized: "Path to a custom ds4-server executable.")
+                    ) {
+                        pathControl(
+                            displayText: pathSummary(appModel.config.customServerPath) ?? String(localized: "No executable selected"),
+                            fullPath: appModel.config.customServerPath
+                        ) {
+                            chooseServiceEngine()
+                        }
                     }
                 }
             }
@@ -45,7 +63,7 @@ struct SettingsView: View {
             SettingsSection("Model") {
                 SettingRow(
                     "--model",
-                    description: "Main GGUF model loaded by ds4-server before accepting API requests."
+                    description: String(localized: "Main GGUF model loaded by ds4-server before accepting API requests.")
                 ) {
                     pathControl(
                         displayText: pathSummary(appModel.config.modelPath) ?? String(localized: "No model selected"),
@@ -57,7 +75,7 @@ struct SettingsView: View {
 
                 SettingRow(
                     "--mtp",
-                    description: "Optional GGUF draft model for speculative decoding."
+                    description: String(localized: "Optional GGUF draft model for speculative decoding.")
                 ) {
                     pathControl(
                         displayText: pathSummary(appModel.config.mtpPath) ?? String(localized: "Not set"),
@@ -69,7 +87,7 @@ struct SettingsView: View {
 
                 SettingRow(
                     "--mtp-draft",
-                    description: "Number of draft tokens to propose when the MTP model is enabled."
+                    description: String(localized: "Number of draft tokens to propose when the MTP model is enabled.")
                 ) {
                     Stepper(value: $appModel.config.mtpDraftTokens, in: 1...16, step: 1) {
                         Text("\(appModel.config.mtpDraftTokens)")
@@ -81,7 +99,7 @@ struct SettingsView: View {
 
                 SettingRow(
                     "--mtp-margin",
-                    description: "Minimum confidence margin used when accepting speculative draft tokens."
+                    description: String(localized: "Minimum confidence margin used when accepting speculative draft tokens.")
                 ) {
                     doubleField(value: $appModel.config.mtpMargin, placeholder: "3")
                 }
@@ -90,7 +108,7 @@ struct SettingsView: View {
             SettingsSection("HTTP API") {
                 SettingRow(
                     "--host",
-                    description: "Bind address for the local API server. Keep 127.0.0.1 for local-only access."
+                    description: String(localized: "Bind address for the local API server. Keep 127.0.0.1 for local-only access.")
                 ) {
                     Picker("", selection: $appModel.config.hostAccess) {
                         ForEach(HostAccess.allCases) { access in
@@ -103,14 +121,14 @@ struct SettingsView: View {
 
                 SettingRow(
                     "--port",
-                    description: "TCP port for the OpenAI-compatible local API."
+                    description: String(localized: "TCP port for the OpenAI-compatible local API.")
                 ) {
                     integerField(value: $appModel.config.port, placeholder: "8000")
                 }
 
                 SettingRow(
                     "--cors",
-                    description: "Allow browser-based clients to call the local service."
+                    description: String(localized: "Allow browser-based clients to call the local service.")
                 ) {
                     Toggle("", isOn: $appModel.config.browserClientsEnabled)
                         .labelsHidden()
@@ -124,28 +142,28 @@ struct SettingsView: View {
             SettingsSection("Model and Runtime") {
                 SettingRow(
                     "--ctx",
-                    description: "Maximum context window, in tokens. Larger values use more memory."
+                    description: String(localized: "Maximum context window, in tokens. Larger values use more memory.")
                 ) {
                     integerField(value: $appModel.config.ctxTokens, placeholder: "100000")
                 }
 
                 SettingRow(
                     "--tokens",
-                    description: "Default generation budget when a client does not provide max tokens."
+                    description: String(localized: "Default generation budget when a client does not provide max tokens.")
                 ) {
                     integerField(value: $appModel.config.defaultOutputTokens, placeholder: "393216")
                 }
 
                 SettingRow(
                     "--threads",
-                    description: "CPU worker thread count. Use 0 to let ds4 choose automatically."
+                    description: String(localized: "CPU worker thread count. Use 0 to let ds4 choose automatically.")
                 ) {
                     integerField(value: $appModel.config.cpuThreads, placeholder: "0")
                 }
 
                 SettingRow(
                     "--backend",
-                    description: "Inference backend. Default lets ds4 choose the best available backend."
+                    description: String(localized: "Inference backend. Default lets ds4 choose the best available backend.")
                 ) {
                     Picker("", selection: $appModel.config.backend) {
                         ForEach(ServerBackend.allCases) { backend in
@@ -158,7 +176,7 @@ struct SettingsView: View {
 
                 SettingRow(
                     "--warm-weights",
-                    description: "Touch model weights during startup to reduce first-request latency."
+                    description: String(localized: "Touch model weights during startup to reduce first-request latency.")
                 ) {
                     Toggle("", isOn: $appModel.config.warmWeights)
                         .labelsHidden()
@@ -166,7 +184,7 @@ struct SettingsView: View {
 
                 SettingRow(
                     "--quality",
-                    description: "Prefer stricter quality paths where ds4 supports them."
+                    description: String(localized: "Prefer stricter quality paths where ds4 supports them.")
                 ) {
                     Toggle("", isOn: $appModel.config.qualityMode)
                         .labelsHidden()
@@ -180,7 +198,7 @@ struct SettingsView: View {
             SettingsSection("Disk KV Cache") {
                 SettingRow(
                     "--kv-disk-dir",
-                    description: "Enable disk-backed KV checkpoints and choose where cache files are stored."
+                    description: String(localized: "Enable disk-backed KV checkpoints and choose where cache files are stored.")
                 ) {
                     Toggle("", isOn: $appModel.config.kvCacheEnabled)
                         .labelsHidden()
@@ -188,7 +206,7 @@ struct SettingsView: View {
 
                 SettingRow(
                     "Cache Folder",
-                    description: "Folder used for ds4 disk KV cache files."
+                    description: String(localized: "Folder used for ds4 disk KV cache files.")
                 ) {
                     pathControl(
                         displayText: appModel.config.kvCacheDirectory,
@@ -200,14 +218,14 @@ struct SettingsView: View {
 
                 SettingRow(
                     "--kv-disk-space-mb",
-                    description: "Maximum disk budget for KV cache files, in megabytes."
+                    description: String(localized: "Maximum disk budget for KV cache files, in megabytes.")
                 ) {
                     integerField(value: $appModel.config.kvDiskSpaceMB, placeholder: "8192")
                 }
 
                 SettingRow(
                     "Cache Usage",
-                    description: "Shows the current on-disk cache size. Stop the service before clearing it."
+                    description: String(localized: "Shows the current on-disk cache size. Stop the service before clearing it.")
                 ) {
                     kvCacheUsageControl
                 }
@@ -216,42 +234,42 @@ struct SettingsView: View {
             SettingsSection("KV Cache Options") {
                 SettingRow(
                     "--kv-cache-min-tokens",
-                    description: "Smallest prefix length that ds4 will store as a reusable checkpoint."
+                    description: String(localized: "Smallest prefix length that ds4 will store as a reusable checkpoint.")
                 ) {
                     integerField(value: $appModel.config.kvCacheMinTokens, placeholder: "512")
                 }
 
                 SettingRow(
                     "--kv-cache-cold-max-tokens",
-                    description: "Largest prompt prefix considered for the first cold checkpoint."
+                    description: String(localized: "Largest prompt prefix considered for the first cold checkpoint.")
                 ) {
                     integerField(value: $appModel.config.kvCacheColdMaxTokens, placeholder: "30000")
                 }
 
                 SettingRow(
                     "--kv-cache-continued-interval-tokens",
-                    description: "Interval for additional checkpoints as a long prompt continues."
+                    description: String(localized: "Interval for additional checkpoints as a long prompt continues.")
                 ) {
                     integerField(value: $appModel.config.kvCacheContinuedIntervalTokens, placeholder: "10000")
                 }
 
                 SettingRow(
                     "--kv-cache-boundary-trim-tokens",
-                    description: "Tail tokens trimmed before aligning checkpoint boundaries."
+                    description: String(localized: "Tail tokens trimmed before aligning checkpoint boundaries.")
                 ) {
                     integerField(value: $appModel.config.kvCacheBoundaryTrimTokens, placeholder: "32")
                 }
 
                 SettingRow(
                     "--kv-cache-boundary-align-tokens",
-                    description: "Token chunk size used when aligning cache checkpoint boundaries."
+                    description: String(localized: "Token chunk size used when aligning cache checkpoint boundaries.")
                 ) {
                     integerField(value: $appModel.config.kvCacheBoundaryAlignTokens, placeholder: "2048")
                 }
 
                 SettingRow(
                     "--kv-cache-reject-different-quant",
-                    description: "Reject cache reuse when quantization metadata differs."
+                    description: String(localized: "Reject cache reuse when quantization metadata differs.")
                 ) {
                     Toggle("", isOn: $appModel.config.kvCacheRejectDifferentQuant)
                         .labelsHidden()
@@ -259,7 +277,7 @@ struct SettingsView: View {
 
                 SettingRow(
                     "--disable-exact-dsml-tool-replay",
-                    description: "Disable exact replay of DSML tool memory during compatible cache reuse."
+                    description: String(localized: "Disable exact replay of DSML tool memory during compatible cache reuse.")
                 ) {
                     Toggle("", isOn: $appModel.config.disableExactDSMLToolReplay)
                         .labelsHidden()
@@ -267,7 +285,7 @@ struct SettingsView: View {
 
                 SettingRow(
                     "--tool-memory-max-ids",
-                    description: "Maximum number of tool-memory identifiers retained by ds4."
+                    description: String(localized: "Maximum number of tool-memory identifiers retained by ds4.")
                 ) {
                     integerField(value: $appModel.config.toolMemoryMaxIds, placeholder: "100000")
                 }
@@ -276,7 +294,7 @@ struct SettingsView: View {
             SettingsSection("Trace") {
                 SettingRow(
                     "--trace",
-                    description: "Write a ds4 trace file for debugging rendered prompts and cache behavior."
+                    description: String(localized: "Write a ds4 trace file for debugging rendered prompts and cache behavior.")
                 ) {
                     Toggle("", isOn: $appModel.config.diagnosticsEnabled)
                         .labelsHidden()
@@ -284,7 +302,7 @@ struct SettingsView: View {
 
                 SettingRow(
                     "Trace File",
-                    description: "Destination file used when trace logging is enabled."
+                    description: String(localized: "Destination file used when trace logging is enabled.")
                 ) {
                     pathControl(
                         displayText: pathSummary(appModel.config.diagnosticsFilePath) ?? "ds4-trace.txt",
@@ -360,13 +378,22 @@ struct SettingsView: View {
     }
 
     private var engineDescription: String {
-        if let custom = pathSummary(appModel.config.customServerPath) {
-            return custom
+        switch appModel.config.serverEngine {
+        case .automatic:
+            if HardwareDetector.supportsSME {
+                return String(localized: "Automatically selects the M4+ optimized engine for this Mac.")
+            }
+            return String(localized: "Automatically selects the baseline Metal engine for this Mac.")
+        case .bundledMetal:
+            return String(localized: "Uses the bundled ds4-server built for all Apple Silicon Macs.")
+        case .bundledMetalM4:
+            return String(localized: "Uses the bundled ds4-server optimized for M4 and later.")
+        case .custom:
+            if let path = pathSummary(appModel.config.customServerPath) {
+                return path
+            }
+            return String(localized: "Select a custom ds4-server executable.")
         }
-        if ServerCommandBuilder.defaultBundledServerURL() != nil {
-            return String(localized: "Bundled engine")
-        }
-        return String(localized: "No bundled engine found")
     }
 
     private func chooseServiceEngine() {
@@ -510,12 +537,12 @@ private struct SettingsSection<Content: View>: View {
 
 private struct SettingRow<Control: View>: View {
     private let title: LocalizedStringKey
-    private let description: LocalizedStringKey
+    private let description: String
     private let control: Control
 
     init(
         _ title: LocalizedStringKey,
-        description: LocalizedStringKey,
+        description: String,
         @ViewBuilder control: () -> Control
     ) {
         self.title = title

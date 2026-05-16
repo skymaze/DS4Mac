@@ -11,9 +11,10 @@ struct DS4MacTests {
 
         var config = ServerConfig.defaults()
         config.customServerPath = "/bin/echo"
+        config.serverEngine = .custom
         config.modelPath = modelURL.path
 
-        let descriptor = try ServerCommandBuilder(bundledServerURL: { nil }).build(config: config)
+        let descriptor = try ServerCommandBuilder(bundledServerURL: { _ in nil }).build(config: config)
 
         #expect(descriptor.environment["DS4_LOCK_FILE"]?.hasSuffix("/Application Support/DS4Mac/ds4.lock") == true)
         #expect(descriptor.arguments == [
@@ -40,6 +41,7 @@ struct DS4MacTests {
 
         var config = ServerConfig.defaults()
         config.customServerPath = "/bin/echo"
+        config.serverEngine = .custom
         config.modelPath = modelURL.path
         config.mtpPath = mtpURL.path
         config.backend = .metal
@@ -52,7 +54,7 @@ struct DS4MacTests {
         config.disableExactDSMLToolReplay = true
         config.toolMemoryMaxIds = 200_000
 
-        let descriptor = try ServerCommandBuilder(bundledServerURL: { nil }).build(config: config)
+        let descriptor = try ServerCommandBuilder(bundledServerURL: { _ in nil }).build(config: config)
         let arguments = descriptor.arguments
 
         #expect(arguments.containsSubsequence(["--backend", "metal"]))
@@ -114,6 +116,41 @@ struct DS4MacTests {
 
         #expect(store.text.isEmpty)
         #expect((try Data(contentsOf: logURL)).isEmpty)
+    }
+
+    @Test func hardwareDetectorDoesNotCrash() {
+        _ = HardwareDetector.supportsSME
+    }
+
+    @Test func legacyConfigWithoutServerEngineDefaultsToAutomatic() throws {
+        let json = """
+        {
+          "modelPath": "/tmp/model.gguf",
+          "customServerPath": null
+        }
+        """
+        let config = try JSONDecoder().decode(ServerConfig.self, from: Data(json.utf8))
+        #expect(config.serverEngine == .automatic)
+    }
+
+    @Test func legacyConfigWithCustomServerPathMigratesToCustom() throws {
+        let json = """
+        {
+          "customServerPath": "/usr/local/bin/ds4-server"
+        }
+        """
+        let config = try JSONDecoder().decode(ServerConfig.self, from: Data(json.utf8))
+        #expect(config.serverEngine == .custom)
+    }
+
+    @Test func explicitServerEngineIsPreserved() throws {
+        let json = """
+        {
+          "serverEngine": "bundledMetalM4"
+        }
+        """
+        let config = try JSONDecoder().decode(ServerConfig.self, from: Data(json.utf8))
+        #expect(config.serverEngine == .bundledMetalM4)
     }
 
     @Test func directoryStorageMeasuresAndClearsContents() throws {

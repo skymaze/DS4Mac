@@ -84,3 +84,15 @@
 "Choose a network port between 1024 and 65535." = "请选择 1024 到 65535 之间的网络端口。";
 "The value for %@ is invalid: %@" = "%@ 的值无效：%@";
 "The storage folder could not be prepared: %@" = "无法准备存储目录：%@";
+"Automatic" = "自动";
+"Metal (bundled)" = "Metal (内置)";
+"Metal M4+ (bundled)" = "Metal M4+ (内置)";
+"Custom..." = "自定义...";
+"Custom Path" = "自定义路径";
+"Path to a custom ds4-server executable." = "自定义 ds4-server 可执行文件路径。";
+"No executable selected" = "未选择可执行文件";
+"Select a custom ds4-server executable." = "选择自定义 ds4-server 可执行文件。";
+"Automatically selects the M4+ optimized engine for this Mac." = "自动选择适用于此 Mac 的 M4+ 优化引擎。";
+"Automatically selects the baseline Metal engine for this Mac." = "自动选择适用于此 Mac 的基础 Metal 引擎。";
+"Uses the bundled ds4-server built for all Apple Silicon Macs." = "使用适用于所有 Apple Silicon Mac 的内置 ds4-server。";
+"Uses the bundled ds4-server optimized for M4 and later." = "使用针对 M4 及更新机型优化的内置 ds4-server。";
