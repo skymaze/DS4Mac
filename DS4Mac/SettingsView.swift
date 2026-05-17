@@ -5,11 +5,16 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @EnvironmentObject private var appModel: AppModel
     @State private var showingClearKVCacheConfirmation = false
-    @State private var selectedTab = "service"
+    @State private var selectedTab = "general"
     @State private var modelSubTab = "recommended"
 
     var body: some View {
         TabView(selection: $selectedTab) {
+            generalTab
+                .tabItem {
+                    Label("General", systemImage: "gearshape")
+                }
+                .tag("general")
             serviceTab
                 .tabItem {
                     Label("Service", systemImage: "server.rack")
@@ -40,6 +45,63 @@ struct SettingsView: View {
         .padding(20)
     }
 
+    private var generalTab: some View {
+        SettingsPage {
+            SettingsSection("Language") {
+                SettingRow(
+                    "App Language",
+                    description: String(localized: "Choose the display language. Changing this requires restarting the app.")
+                ) {
+                    Picker("", selection: Binding(
+                        get: { AppPreferences.appLanguage },
+                        set: { AppPreferences.appLanguage = $0 }
+                    )) {
+                        ForEach(AppLanguage.allCases) { lang in
+                            Text(lang.title).tag(lang)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 190)
+                }
+            }
+
+            SettingsSection("Configuration") {
+                SettingRow(
+                    "Reset to Defaults",
+                    description: String(localized: "Restore all settings to their factory defaults. This cannot be undone.")
+                ) {
+                    Button(role: .destructive) {
+                        appModel.resetConfig()
+                    } label: {
+                        Label(String(localized: "Reset All Settings"), systemImage: "arrow.counterclockwise")
+                    }
+                }
+
+                SettingRow(
+                    "Save to File",
+                    description: String(localized: "Export the current configuration as a JSON file for backup or sharing.")
+                ) {
+                    Button {
+                        appModel.saveConfigToFile()
+                    } label: {
+                        Label(String(localized: "Save Config..."), systemImage: "square.and.arrow.up")
+                    }
+                }
+
+                SettingRow(
+                    "Load from File",
+                    description: String(localized: "Import configuration from a previously saved JSON file.")
+                ) {
+                    Button {
+                        appModel.loadConfigFromFile()
+                    } label: {
+                        Label(String(localized: "Load Config..."), systemImage: "square.and.arrow.down")
+                    }
+                }
+            }
+        }
+    }
+
     private var serviceTab: some View {
         SettingsPage {
             SettingsSection("Service Engine") {
@@ -67,6 +129,18 @@ struct SettingsView: View {
                         ) {
                             chooseServiceEngine()
                         }
+                    }
+                }
+
+                SettingRow(
+                    "--chdir",
+                    description: String(localized: "Working directory for ds4-server. The Metal shaders in metal/ are loaded relative to this path. Leave empty to use the directory containing the server executable.")
+                ) {
+                    pathControl(
+                        displayText: pathSummary(appModel.config.customChdirPath) ?? String(localized: "Auto (server directory)"),
+                        fullPath: appModel.config.customChdirPath
+                    ) {
+                        chooseChdir()
                     }
                 }
             }
@@ -634,6 +708,11 @@ struct SettingsView: View {
         appModel.config.customServerPath = url.path
     }
 
+    private func chooseChdir() {
+        guard let url = openDirectory() else { return }
+        appModel.config.customChdirPath = url.path
+    }
+
     private func chooseKVCacheFolder() {
         guard let url = openDirectory() else { return }
         appModel.config.kvCacheDirectory = url.path
@@ -694,14 +773,14 @@ struct SettingsView: View {
     }
 
     private func integerField(value: Binding<Int>, placeholder: String) -> some View {
-        TextField(placeholder, value: value, format: .number)
+        TextField(placeholder, value: value, format: .number.grouping(.never))
             .textFieldStyle(.roundedBorder)
             .frame(width: 130)
             .monospacedDigit()
     }
 
     private func doubleField(value: Binding<Double>, placeholder: String) -> some View {
-        TextField(placeholder, value: value, format: .number)
+        TextField(placeholder, value: value, format: .number.grouping(.never))
             .textFieldStyle(.roundedBorder)
             .frame(width: 130)
             .monospacedDigit()

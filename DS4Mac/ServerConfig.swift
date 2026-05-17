@@ -56,6 +56,7 @@ struct ServerConfig: Codable, Equatable {
     static let defaultToolMemoryMaxIds = 100_000
 
     var customServerPath: String?
+    var customChdirPath: String?
     var serverEngine: ServerEngine
     var modelPath: String?
     var mtpPath: String?
@@ -87,6 +88,7 @@ struct ServerConfig: Codable, Equatable {
     static func defaults() -> ServerConfig {
         ServerConfig(
             customServerPath: nil,
+            customChdirPath: nil,
             serverEngine: .automatic,
             modelPath: nil,
             mtpPath: nil,
@@ -119,6 +121,7 @@ struct ServerConfig: Codable, Equatable {
 
     init(
         customServerPath: String?,
+        customChdirPath: String?,
         serverEngine: ServerEngine,
         modelPath: String?,
         mtpPath: String?,
@@ -148,6 +151,7 @@ struct ServerConfig: Codable, Equatable {
         diagnosticsFilePath: String
     ) {
         self.customServerPath = customServerPath
+        self.customChdirPath = customChdirPath
         self.serverEngine = serverEngine
         self.modelPath = modelPath
         self.mtpPath = mtpPath
@@ -182,6 +186,7 @@ struct ServerConfig: Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         customServerPath = try container.decodeIfPresent(String.self, forKey: .customServerPath) ?? defaults.customServerPath
+        customChdirPath = try container.decodeIfPresent(String.self, forKey: .customChdirPath) ?? defaults.customChdirPath
 
         if let engine = try container.decodeIfPresent(ServerEngine.self, forKey: .serverEngine) {
             serverEngine = engine
@@ -241,6 +246,7 @@ struct ServerConfig: Codable, Equatable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(customServerPath, forKey: .customServerPath)
+        try container.encodeIfPresent(customChdirPath, forKey: .customChdirPath)
         try container.encode(serverEngine, forKey: .serverEngine)
         try container.encodeIfPresent(modelPath, forKey: .modelPath)
         try container.encodeIfPresent(mtpPath, forKey: .mtpPath)
@@ -294,6 +300,7 @@ struct ServerConfig: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case customServerPath
+        case customChdirPath
         case serverEngine
         case modelPath
         case mtpPath

@@ -11,6 +11,10 @@ import SwiftUI
 struct DS4MacApp: App {
     @StateObject private var appModel = AppModel()
 
+    init() {
+        AppPreferences.applyLanguage()
+    }
+
     var body: some Scene {
         MenuBarExtra {
             StatusMenuView()

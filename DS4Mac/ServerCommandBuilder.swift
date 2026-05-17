@@ -90,7 +90,11 @@ struct ServerCommandBuilder {
 
         try prepareStorage(config: config)
 
+        let chdir = config.customChdirPath
+            ?? findDS4SourceDir(executableDir: executableURL.deletingLastPathComponent())
+            ?? executableURL.deletingLastPathComponent().path
         var arguments = [
+            "--chdir", chdir,
             "--model", modelURL.path,
             "--ctx", String(config.ctxTokens),
             "--tokens", String(config.defaultOutputTokens),
@@ -159,7 +163,7 @@ struct ServerCommandBuilder {
 
         return ServerLaunchDescriptor(
             executableURL: executableURL,
-            currentDirectoryURL: Bundle.main.resourceURL,
+            currentDirectoryURL: URL(fileURLWithPath: chdir, isDirectory: true),
             arguments: arguments,
             environment: sidecarEnvironment()
         )
@@ -257,6 +261,29 @@ struct ServerCommandBuilder {
         guard value >= 0 else {
             throw ServerLaunchError.invalidValue(flag: flag, value: String(value))
         }
+    }
+
+    private func findDS4SourceDir(executableDir: URL) -> String? {
+        if FileManager.default.fileExists(atPath: executableDir.appendingPathComponent("metal").path) {
+            return executableDir.path
+        }
+        #if DEBUG
+        let sourceFile = URL(fileURLWithPath: #filePath)
+        let repoRoot = sourceFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let vendored = repoRoot.appendingPathComponent("Vendor/ds4")
+        if FileManager.default.fileExists(atPath: vendored.appendingPathComponent("metal").path) {
+            return vendored.path
+        }
+        let sibling = repoRoot
+            .deletingLastPathComponent()
+            .appendingPathComponent("ds4")
+        if FileManager.default.fileExists(atPath: sibling.appendingPathComponent("metal").path) {
+            return sibling.path
+        }
+        #endif
+        return nil
     }
 
     private func sidecarEnvironment() -> [String: String] {

@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import UniformTypeIdentifiers
 
 final class AppModel: ObservableObject {
     @Published var config: ServerConfig {
@@ -150,6 +151,33 @@ final class AppModel: ObservableObject {
             }
             isRefreshingKVCacheUsage = false
         }
+    }
+
+    func resetConfig() {
+        config = ServerConfig.defaults()
+    }
+
+    func saveConfigToFile() {
+        let panel = NSSavePanel()
+        panel.title = String(localized: "Save Configuration")
+        panel.nameFieldStringValue = "DS4Mac-config.json"
+        panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard let data = try? JSONEncoder().encode(config) else { return }
+        try? data.write(to: url)
+    }
+
+    func loadConfigFromFile() {
+        let panel = NSOpenPanel()
+        panel.title = String(localized: "Load Configuration")
+        panel.allowsMultipleSelection = false
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard let data = try? Data(contentsOf: url),
+              let loaded = try? JSONDecoder().decode(ServerConfig.self, from: data) else { return }
+        config = loaded
     }
 
     func revealLogsFolder() {

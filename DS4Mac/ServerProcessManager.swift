@@ -63,11 +63,14 @@ final class ServerProcessManager: ObservableObject {
         self.logStore = logStore
         self.commandBuilder = commandBuilder ?? ServerCommandBuilder()
         self.healthChecker = healthChecker
+        reapOrphanedProcesses()
     }
 
     var isServiceProcessRunning: Bool {
         process?.isRunning == true
     }
+
+    // MARK: - Public API
 
     func start(config: ServerConfig) {
         guard status.canStart else { return }
@@ -75,6 +78,7 @@ final class ServerProcessManager: ObservableObject {
             status = .failed(String(localized: "Stop the current service process before starting a new one."))
             return
         }
+
         do {
             let descriptor = try commandBuilder.build(config: config)
             let launchedProcess = Process()
@@ -156,6 +160,7 @@ final class ServerProcessManager: ObservableObject {
                     _ = kill(process.processIdentifier, SIGKILL)
                     self.logStore.append("The service did not stop cleanly, so it was force stopped.")
                 }
+                self.removeLockFile()
             }
         }
     }
@@ -165,6 +170,17 @@ final class ServerProcessManager: ObservableObject {
         guard let process, process.isRunning else { return }
         logStore.append("Stopping DS4 service because DS4Mac is quitting.")
         process.terminate()
+        // Block until the process exits, with a timeout to avoid hanging app termination.
+        let deadline = DispatchTime.now() + .seconds(3)
+        while process.isRunning && DispatchTime.now() < deadline {
+            usleep(100_000)
+        }
+        if process.isRunning {
+            kill(process.processIdentifier, SIGKILL)
+            usleep(200_000)
+        }
+        cleanupPipes()
+        removeLockFile()
     }
 
     func restart(config: ServerConfig) {
@@ -175,6 +191,45 @@ final class ServerProcessManager: ObservableObject {
         pendingRestartConfig = config
         stop()
     }
+
+    // MARK: - Orphan reaping
+
+    /// Kill any ds4-server processes left over from a previous session (crash, force quit, etc.).
+    private func reapOrphanedProcesses() {
+        guard let pids = ds4ServerPIDs(), !pids.isEmpty else { return }
+        for pid in pids {
+            logStore.append("Reaping orphaned ds4-server process (pid \(pid)).")
+            kill(pid, SIGTERM)
+        }
+        usleep(500_000)
+        for pid in pids {
+            if kill(pid, 0) == 0 {
+                kill(pid, SIGKILL)
+            }
+        }
+        removeLockFile()
+    }
+
+    private func ds4ServerPIDs() -> [pid_t]? {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        task.arguments = ["-f", "ds4-server"]
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = FileHandle.nullDevice
+        do {
+            try task.run()
+            task.waitUntilExit()
+        } catch {
+            return nil
+        }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        guard let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !output.isEmpty else { return nil }
+        return output.split(separator: "\n").compactMap { pid_t($0.trimmingCharacters(in: .whitespaces)) }
+    }
+
+    // MARK: - Process lifecycle
 
     private func attach(pipe: Pipe, label: String) {
         pipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
@@ -190,6 +245,7 @@ final class ServerProcessManager: ObservableObject {
         guard process?.processIdentifier == terminatedProcess.processIdentifier else { return }
         drainPipes()
         cleanupPipes()
+        removeLockFile()
         process = nil
         if case .stopping = status {
             status = .stopped
@@ -233,6 +289,11 @@ final class ServerProcessManager: ObservableObject {
             return
         }
         logStore.append("[\(label)] \(message)")
+    }
+
+    private func removeLockFile() {
+        let path = AppDirectories.applicationSupport.appendingPathComponent("ds4.lock").path
+        _ = try? FileManager.default.removeItem(atPath: path)
     }
 
     private func cleanupPipes() {
